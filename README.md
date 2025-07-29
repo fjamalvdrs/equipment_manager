@@ -180,8 +180,6 @@ MIT License
 ---
 
 **Questions?**
+
 Contact: Ajith Srikanth
 
----
-
-Let me know if you want a one-liner project badge section, GIF demo, or explicit CI/CD instructions included.
