@@ -1,98 +1,187 @@
 # Van Dyk Equipment Manager
 
-## Overview
- A modular Streamlit application for managing equipment, searching records, and visualizing equipment networks. Includes Excel-like interfaces and database integration.
+A scalable Streamlit application for centralized equipment management, rapid search, and data-driven insights at Van Dyk Recycling Solutions. Designed for modular growth, with direct SQL Server connectivity, Excel-like editing, and optional network visualization.
 
-## Features
+---
 
-## Getting Started
+## **Table of Contents**
 
-### Prerequisites
+* [Overview](#overview)
+* [Features](#features)
+* [Architecture](#architecture)
+* [Getting Started](#getting-started)
+* [Configuration](#configuration)
+* [Usage](#usage)
+* [File Structure](#file-structure)
+* [Deployment](#deployment)
+* [Advanced Usage](#advanced-usage)
+* [Troubleshooting](#troubleshooting)
+* [Contributing](#contributing)
+* [License](#license)
 
-### Installation
-1. Clone or download this repository.
-2. Install dependencies:
-   ```
+---
+
+## **Overview**
+
+Van Dyk Equipment Manager is a modular Streamlit platform for managing, visualizing, and auditing equipment records, with full SQL Server integration and smart Excel import/export. Designed for data engineers and operations teams handling thousands of equipment records across projects.
+
+---
+
+## **Features**
+
+* **Equipment CRUD:** Add, edit, and delete records with validation and audit trail.
+* **Excel-like Table UI:** Inline editing, batch import/export, duplicate detection.
+* **Advanced Search:** Multi-field, fuzzy, and serial-based lookup.
+* **Network Visualization:** Optional graph view of equipment relationships.
+* **SQL Server Integration:** Supports both TestDB and PowerApps databases.
+* **Audit Trail:** History logging for all changes.
+* **Modular Architecture:** Plug-and-play modules (management, search, visualization).
+* **Flexible Configuration:** Session state, sidebar tools, custom environment support.
+* **Secure Secrets:** Encrypted credential handling for cloud and on-premise use.
+
+---
+
+## **Architecture**
+
+* **Frontend:** Streamlit with session state and custom JS/CSS.
+* **Backend:** Python, SQLAlchemy, Pandas.
+* **DB:** Azure SQL Server (`testDB`, `PowerAppsDatabase`).
+* **Modularity:** All features in isolated modules for scalability and testing.
+
+---
+
+## **Getting Started**
+
+### **Prerequisites**
+
+* Python 3.8 or newer
+* Access to Van Dyk SQL Server (contact admin for credentials)
+* (Optional) Excel 2016+ for advanced import/export
+
+### **Installation**
+
+```sh
+git clone https://github.com/YOUR_ORG/equipment_manager.git
+cd equipment_manager
 pip install -r requirements.txt
-   ```
-
-### Running the App
-Run the main application:
 ```
+
+### **Configuration**
+
+For local use, edit `db_utils.py` or set environment variables:
+
+```env
+DB_SERVER=your_db_server
+DB_USER=your_username
+DB_PASSWORD=your_password
+```
+
+For **Streamlit Cloud**, use the **Secrets Manager** (recommended):
+
+```toml
+# Streamlit Cloud secrets.toml
+DB_SERVER = "your_server"
+DB_USER = "your_user"
+DB_PASSWORD = "your_password"
+```
+
+### **Running the App**
+
+```sh
 streamlit run appv1.py
 ```
 
-### File Structure
+---
 
-## Deployment
+## **Usage**
 
-## Notes
+* Launch the app in your browser (default: [http://localhost:8501](http://localhost:8501))
+* Use sidebar tabs to:
 
-## License
-MIT
+  * Manage equipment (CRUD)
+  * Search records (filter, export, audit)
+  * Visualize equipment network (optional)
+* Test DB connection via sidebar utility
+* Import/export via Excel using UI tools
 
-# Van Dyk Equipment Manager
+---
 
-## Overview
-A modular Streamlit application for managing equipment, searching records, and visualizing equipment networks. Includes Excel-like interfaces and database integration.
+## **File Structure**
 
-## Features
-- Equipment add/edit with smart Excel-like UI
-- Search and analysis tools
-- Network visualization (optional)
-- Modular code structure
-- Database connectivity (SQL Server)
-- Audit trail and history tracking
-- Advanced Excel import/export
-- Flexible configuration and session management
-
-## Getting Started
-
-### Prerequisites
-- Python 3.8+
-- SQL Server database (TestDB and PowerApps)
-- All module files in the same directory
-
-### Installation
-1. Clone or download this repository.
-2. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
-
-### Running the App
-Run the main application:
 ```
-streamlit run appv1.py
+equipment_manager/
+├── appv1.py                # Main Streamlit entrypoint
+├── equipment_manager.py    # Equipment CRUD module
+├── search_equipment.py     # Search/lookup logic
+├── network_visualization.py# (Optional) Network visualization
+├── db_utils.py             # SQL Server utilities & engine
+├── validation.py           # Data validation helpers
+├── shared_config.py        # Global config/session helpers
+├── requirements.txt        # Python dependencies
+├── lib/                    # JS/CSS (optional, for graphs)
+├── logs/                   # App logs (auto-generated)
+├── old_versions/           # Archives/unused
 ```
 
-### File Structure
-- `appv1.py` - Main entry point
-- `equipment_manager.py` - Equipment management module
-- `search_equipment.py` - Search module
-- `network_visualization.py` - Visualization module
-- `shared_config.py` - Shared config/utilities
-- `db_utils.py` - Database utilities
-- `validation.py` - Data validation
-- `requirements.txt` - Python dependencies
-- `lib/` - JS/CSS for visualization (optional)
-- `logs/` - Application logs
-- `old_versions/` - Archived/unused files
+---
 
-## Deployment
-- Remove unused files for a clean deployment
-- Ensure all dependencies are installed
-- Optionally, use Docker or cloud deployment for production
+## **Deployment**
 
-## Advanced Usage
-- For advanced Excel features, install optional packages listed in `requirements.txt`
-- Use the sidebar to test database connections and reset session state
-- Use tabs for equipment management, search, and visualization
+### **Local/On-Prem**
 
-## Troubleshooting
-- Ensure all module files are present in the same directory
-- Check database connection settings in `db_utils.py`
-- Review logs in `logs/app.log` for errors
+* Ensure all dependencies in `requirements.txt` are installed.
+* Use `streamlit run appv1.py`
+* Configure firewall for network use (`--server.address=0.0.0.0`).
 
-## License
-MIT
+### **Streamlit Cloud**
+
+* Push code to GitHub.
+* Deploy via [streamlit.io/cloud](https://streamlit.io/cloud).
+* Configure secrets for DB credentials in Advanced Settings.
+
+### **Production/Advanced**
+
+* Clean unused modules.
+* (Optional) Use Docker or reverse proxy for HTTPS and scalability.
+* Set up secure log management and backup.
+
+---
+
+## **Advanced Usage**
+
+* **Excel Imports:** Use advanced Excel features (see requirements.txt for optional packages like `openpyxl`, `xlrd`).
+* **Sidebar Utilities:** DB connection test, session reset.
+* **Custom Config:** Edit `shared_config.py` or inject via secrets/environment.
+
+---
+
+## **Troubleshooting**
+
+| Issue                   | Fix/Tip                                                 |
+| ----------------------- | ------------------------------------------------------- |
+| App not starting        | Check Python version, all deps installed                |
+| DB connection fails     | Check secrets, environment variables, SQL Server access |
+| Module import errors    | Ensure all .py files are present in the app directory   |
+| Excel import errors     | Install optional Excel packages, check file formats     |
+| Cloud deployment issues | Ensure requirements.txt and secrets.toml are correct    |
+
+---
+
+## **Contributing**
+
+* No Changes Thanks
+
+---
+
+## **License**
+
+MIT License
+
+---
+
+**Questions?**
+Contact: Ajith Srikanth
+
+---
+
+Let me know if you want a one-liner project badge section, GIF demo, or explicit CI/CD instructions included.
