@@ -1,0 +1,11 @@
+streamlit
+streamlit-aggrid
+pandas
+pyodbc
+openpyxl
+sqlalchemy
+networkx
+pyvis
+# Optional Excel-like components
+streamlit-excel-table  # Uncomment to install professional Excel component
+mitosheet              # Uncomment to install advanced spreadsheet

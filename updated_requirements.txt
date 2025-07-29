@@ -1,0 +1,31 @@
+# Van Dyk Equipment Manager - Modular Architecture
+# Version 5.0 - Separated into multiple modules
+
+# Core Streamlit and data processing
+streamlit
+pandas
+pyodbc
+openpyxl
+sqlalchemy
+
+# Excel-like interface
+streamlit-aggrid
+
+# Network visualization (optional)
+networkx
+pyvis
+
+# Additional Excel components (optional - uncomment to install)
+# streamlit-excel-table  # Professional Excel component
+# mitosheet              # Advanced spreadsheet with formulas
+
+# File structure:
+# app.py                 - Master application (main entry point)
+# shared_config.py       - Shared configuration and utilities
+# equipment_manager.py   - Equipment add/edit functionality
+# search_equipment.py    - Search and analysis functionality  
+# network_visualization.py - Network visualization
+# db_utils.py           - Database utilities (existing)
+# validation.py         - Data validation (existing)
+
+# To run: streamlit run app.py

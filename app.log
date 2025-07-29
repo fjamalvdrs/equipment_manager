@@ -1,0 +1,36 @@
+ 2025-07-18 13:04:50,409 ERROR:Dropdown fetch error for EquipmentKey: (pyodbc.ProgrammingError) ('42S02', "[42S02] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid object name 'EquipmentTable'. (208) (SQLExecDirectW)")
+[SQL: SELECT DISTINCT [EquipmentKey] FROM [EquipmentTable] WHERE [EquipmentKey] IS NOT NULL ORDER BY [EquipmentKey]]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-07-18 13:04:50,715 ERROR:Dropdown fetch error for EquipmentType: (pyodbc.ProgrammingError) ('42S02', "[42S02] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid object name 'EquipmentTable'. (208) (SQLExecDirectW)")
+[SQL: SELECT DISTINCT [EquipmentType] FROM [EquipmentTable] WHERE [EquipmentType] IS NOT NULL ORDER BY [EquipmentType]]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-07-18 13:04:51,025 ERROR:Dropdown fetch error for Model: (pyodbc.ProgrammingError) ('42S02', "[42S02] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid object name 'EquipmentTable'. (208) (SQLExecDirectW)")
+[SQL: SELECT DISTINCT [Model] FROM [EquipmentTable] WHERE [Model] IS NOT NULL ORDER BY [Model]]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-07-18 13:04:51,209 ERROR:Dropdown fetch error for FunctionalType: (pyodbc.ProgrammingError) ('42S02', "[42S02] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid object name 'EquipmentTable'. (208) (SQLExecDirectW)")
+[SQL: SELECT DISTINCT [FunctionalType] FROM [EquipmentTable] WHERE [FunctionalType] IS NOT NULL ORDER BY [FunctionalType]]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-07-18 13:04:51,529 ERROR:Dropdown fetch error for ManufacturerModelDescription: (pyodbc.ProgrammingError) ('42S02', "[42S02] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid object name 'EquipmentTable'. (208) (SQLExecDirectW)")
+[SQL: SELECT DISTINCT [ManufacturerModelDescription] FROM [EquipmentTable] WHERE [ManufacturerModelDescription] IS NOT NULL ORDER BY [ManufacturerModelDescription]]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-07-18 13:04:51,712 ERROR:Dropdown fetch error for SerialNumber: (pyodbc.ProgrammingError) ('42S02', "[42S02] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid object name 'EquipmentTable'. (208) (SQLExecDirectW)")
+[SQL: SELECT DISTINCT [SerialNumber] FROM [EquipmentTable] WHERE [SerialNumber] IS NOT NULL ORDER BY [SerialNumber]]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-07-18 13:26:48,933 ERROR:Dropdown fetch error for SortSystemPosition: (pyodbc.ProgrammingError) ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'SortSystemPosition'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'SortSystemPosition'. (207)")
+[SQL: SELECT DISTINCT [SortSystemPosition] FROM [vw_ModelSpecifications] WHERE [SortSystemPosition] IS NOT NULL ORDER BY [SortSystemPosition]]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-07-18 13:26:49,267 ERROR:Dropdown fetch error for SerialNumber: (pyodbc.ProgrammingError) ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'SerialNumber'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'SerialNumber'. (207)")
+[SQL: SELECT DISTINCT [SerialNumber] FROM [vw_ModelSpecifications] WHERE [SerialNumber] IS NOT NULL ORDER BY [SerialNumber]]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-07-18 13:47:31,073 ERROR:Dropdown fetch error for SortSystemPosition: (pyodbc.ProgrammingError) ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'SortSystemPosition'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'SortSystemPosition'. (207)")
+[SQL: SELECT DISTINCT [SortSystemPosition] FROM [vw_ModelSpecifications] WHERE [SortSystemPosition] IS NOT NULL ORDER BY [SortSystemPosition]]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-07-18 13:47:31,392 ERROR:Dropdown fetch error for SerialNumber: (pyodbc.ProgrammingError) ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'SerialNumber'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'SerialNumber'. (207)")
+[SQL: SELECT DISTINCT [SerialNumber] FROM [vw_ModelSpecifications] WHERE [SerialNumber] IS NOT NULL ORDER BY [SerialNumber]]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-07-18 13:48:49,980 ERROR:Dropdown fetch error for SortSystemPosition: (pyodbc.ProgrammingError) ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'SortSystemPosition'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'SortSystemPosition'. (207)")
+[SQL: SELECT DISTINCT [SortSystemPosition] FROM [vw_ModelSpecifications] WHERE [SortSystemPosition] IS NOT NULL ORDER BY [SortSystemPosition]]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2025-07-18 13:48:50,275 ERROR:Dropdown fetch error for SerialNumber: (pyodbc.ProgrammingError) ('42S22', "[42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'SerialNumber'. (207) (SQLExecDirectW); [42S22] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Invalid column name 'SerialNumber'. (207)")
+[SQL: SELECT DISTINCT [SerialNumber] FROM [vw_ModelSpecifications] WHERE [SerialNumber] IS NOT NULL ORDER BY [SerialNumber]]
+(Background on this error at: https://sqlalche.me/e/20/f405)
