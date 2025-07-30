@@ -1,13 +1,4 @@
-"""
-Equipment Manager Module (V6)
-============================
-Handles all equipment add/edit functionality:
-- Exact SQL field order (no column mismatch)
-- Excel-like data grid
-- Correct session-to-SQL mapping (first 5 columns always filled by user)
-- Save/add with full schema alignment
-- Audit trail in RecordHistory
-"""
+# Equipment Manager Module (V6, SQL Order, NO Syntax Errors)
 import streamlit as st
 import pandas as pd
 import logging
@@ -19,7 +10,6 @@ from shared_config import (
 )
 from db_utils import get_engine_testdb, fetch_frequent_values
 
-# --- Exact SQL schema column order ---
 SQL_COLUMN_ORDER = [
     'CustomerID', 'CustomerName', 'CustomerLocation', 'ActiveStatus', 'SortSystemPosition',
     'SerialNumber', 'OtherOrPreviousPosition', 'CustomerPositionNo', 'YearManufactured', 'SalesDateWarrantyStartDate',
@@ -290,13 +280,11 @@ class EquipmentManager:
 
     def _build_complete_grid(self, existing_df: pd.DataFrame) -> pd.DataFrame:
         all_rows = []
-        # Existing records
         for idx, row in existing_df.iterrows():
             grid_row = {'Status': f'🔄#{idx+1}'}
             for col in SQL_COLUMN_ORDER:
                 grid_row[col] = row.get(col, '') if col in row else ''
             all_rows.append(grid_row)
-        # Blank rows for entry
         for i in range(10 if existing_df.empty else 5):
             grid_row = {'Status': f'➕{i+1}'}
             for col in SQL_COLUMN_ORDER:
@@ -329,4 +317,107 @@ class EquipmentManager:
             """)
             result = pd.read_sql(query, engine, params={
                 'table_name': table_name,
-                'column_name
+                'column_name': column_name
+            })
+            return result['cnt'].iloc[0] > 0
+        except Exception:
+            return False
+
+    def _get_next_row_counter(self, engine, table_name: str) -> int:
+        try:
+            query = text(f"SELECT ISNULL(MAX([RowCounter]), 0) + 1 as next_counter FROM [dbo].[{table_name}]")
+            result = pd.read_sql(query, engine)
+            return int(result['next_counter'].iloc[0])
+        except Exception:
+            return 1
+
+    def _save_to_database(self, edited_df: pd.DataFrame):
+        try:
+            table_name = self._get_equipment_table_name()
+            if not table_name:
+                st.error("❌ Could not find equipment table")
+                return
+
+            engine = get_engine_testdb()
+            success_count = 0
+            errors = []
+
+            has_row_counter = self._check_column_exists(engine, table_name, 'RowCounter')
+
+            st.info("💾 **Saving to database...**")
+            st.caption("Audit trail: User identity and timestamp will be added to RecordHistory")
+            if has_row_counter:
+                st.caption("RowCounter: Automatically assigned for new records")
+
+            for idx, row in edited_df.iterrows():
+                try:
+                    # Skip empty rows
+                    if not any(str(row.get(col, '')).strip() for col in SQL_COLUMN_ORDER):
+                        continue
+
+                    record = {}
+                    for col in SQL_COLUMN_ORDER:
+                        if col in self.config.FIXED_FIELDS:
+                            record[col] = st.session_state.get(col, '')
+                        else:
+                            val = row.get(col, '')
+                            record[col] = str(val) if pd.notna(val) and str(val).strip() != '' else None
+
+                    # RecordHistory logic (append new edit info)
+                    if 'RecordHistory' in record:
+                        existing_history = row.get('RecordHistory', '') or ''
+                        user_identity = get_user_identity()
+                        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        edit_info = f"[{timestamp}] Edited by: {user_identity}"
+                        if existing_history:
+                            record['RecordHistory'] = f"{existing_history}\n{edit_info}"
+                        else:
+                            record['RecordHistory'] = edit_info
+
+                    # --- Save Logic ---
+                    check_query = text(f"SELECT COUNT(*) as cnt FROM [dbo].[{table_name}] WHERE [SerialNumber] = :serial_number")
+                    exists_result = pd.read_sql(check_query, engine, params={'serial_number': record['SerialNumber']})
+                    record_exists = exists_result['cnt'].iloc[0] > 0
+
+                    if record_exists:
+                        # UPDATE (do not update RowCounter)
+                        set_clauses = []
+                        update_params = {}
+                        for key, value in record.items():
+                            if key not in ['SerialNumber', 'RowCounter']:
+                                set_clauses.append(f"[{key}] = :{key}")
+                                update_params[key] = value
+                        update_params['serial_number'] = record['SerialNumber']
+                        update_query = text(f"UPDATE [dbo].[{table_name}] SET {', '.join(set_clauses)} WHERE [SerialNumber] = :serial_number")
+                        with engine.begin() as conn:
+                            conn.execute(update_query, update_params)
+                    else:
+                        # INSERT
+                        if has_row_counter:
+                            record['RowCounter'] = self._get_next_row_counter(engine, table_name)
+                        columns = ", ".join([f"[{col}]" for col in record.keys()])
+                        placeholders = ", ".join([f":{col}" for col in record.keys()])
+                        insert_query = text(f"INSERT INTO [dbo].[{table_name}] ({columns}) VALUES ({placeholders})")
+                        with engine.begin() as conn:
+                            conn.execute(insert_query, record)
+                    success_count += 1
+
+                except Exception as e:
+                    errors.append(f"Row {idx+1}: {str(e)}")
+                    logging.error(f"Save row {idx} failed: {str(e)}")
+
+            # Show results
+            if success_count > 0:
+                st.success(f"🎉 Successfully saved {success_count} records!")
+                logging.info(f"Equipment Manager: User saved {success_count} records")
+            if errors:
+                st.error(f"❌ {len(errors)} errors occurred:")
+                for error in errors[:3]:
+                    st.write(f"• {error}")
+                if len(errors) > 3:
+                    st.write(f"... and {len(errors)-3} more errors")
+
+        except Exception as e:
+            st.error(f"❌ Save operation failed: {str(e)}")
+            logging.error(f"Equipment save failed: {str(e)}")
+
