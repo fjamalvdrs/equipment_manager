@@ -1,17 +1,12 @@
 """
-Equipment Manager Module
-=======================
-
-Handles all equipment add/edit functionality including:
-- Smart auto-fill from database
-- Excel-like data interface with direct paste support
-- Complete equipment field management
-- Database save operations with audit trail in RecordHistory
-- Automatic RowCounter management
-- Flexible data loading with OR-based search
-- Automatic table name correction
-
-Version: 5.5 - Fixed table name resolution
+Equipment Manager Module (V6)
+============================
+Handles all equipment add/edit functionality:
+- Exact SQL field order (no column mismatch)
+- Excel-like data grid
+- Correct session-to-SQL mapping (first 5 columns always filled by user)
+- Save/add with full schema alignment
+- Audit trail in RecordHistory
 """
 import streamlit as st
 import pandas as pd
@@ -24,7 +19,7 @@ from shared_config import (
 )
 from db_utils import get_engine_testdb, fetch_frequent_values
 
-# --- NEW: FULL SQL COLUMN ORDER, INCLUDING FILL-IN GAPS ---
+# --- Exact SQL schema column order ---
 SQL_COLUMN_ORDER = [
     'CustomerID', 'CustomerName', 'CustomerLocation', 'ActiveStatus', 'SortSystemPosition',
     'SerialNumber', 'OtherOrPreviousPosition', 'CustomerPositionNo', 'YearManufactured', 'SalesDateWarrantyStartDate',
@@ -295,13 +290,13 @@ class EquipmentManager:
 
     def _build_complete_grid(self, existing_df: pd.DataFrame) -> pd.DataFrame:
         all_rows = []
-        # Existing
+        # Existing records
         for idx, row in existing_df.iterrows():
             grid_row = {'Status': f'🔄#{idx+1}'}
             for col in SQL_COLUMN_ORDER:
                 grid_row[col] = row.get(col, '') if col in row else ''
             all_rows.append(grid_row)
-        # Blank rows
+        # Blank rows for entry
         for i in range(10 if existing_df.empty else 5):
             grid_row = {'Status': f'➕{i+1}'}
             for col in SQL_COLUMN_ORDER:
@@ -334,15 +329,4 @@ class EquipmentManager:
             """)
             result = pd.read_sql(query, engine, params={
                 'table_name': table_name,
-                'column_name': column_name
-            })
-            return result['cnt'].iloc[0] > 0
-        except Exception:
-            return False
-
-    def _get_next_row_counter(self, engine, table_name: str) -> int:
-        try:
-            query = text(f"SELECT ISNULL(MAX([RowCounter]), 0) + 1 as next_counter FROM [dbo].[{table_name}]")
-            result = pd.read_sql(query, engine)
-            record['RowCounter'] = int(result['next_counter'].iloc[0])
-
+                'column_name
