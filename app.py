@@ -90,7 +90,6 @@ def render_sidebar():
             key="username"
         )
         if username.strip():
-            st.session_state["username"] = username.strip()
             st.success(f"Welcome, {username.strip()}!")
         else:
             st.warning("Please enter your name to continue.")
