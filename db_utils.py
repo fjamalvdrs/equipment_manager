@@ -1,5 +1,5 @@
-import streamlit as st
 import urllib
+import os
 import pandas as pd
 from sqlalchemy import create_engine
 
@@ -95,4 +95,3 @@ def fetch_project_manufacturer(project_number, table="Projects"):
     if not df.empty:
         return df['Manufacturer'].iloc[0]
     return None 
-
