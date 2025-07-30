@@ -342,4 +342,7 @@ class EquipmentManager:
 
     def _get_next_row_counter(self, engine, table_name: str) -> int:
         try:
-            query = text(f"SELECT ISNULL(MAX([RowCounter]), 0) +
+            query = text(f"SELECT ISNULL(MAX([RowCounter]), 0) + 1 as next_counter FROM [dbo].[{table_name}]")
+            result = pd.read_sql(query, engine)
+            record['RowCounter'] = int(result['next_counter'].iloc[0])
+
