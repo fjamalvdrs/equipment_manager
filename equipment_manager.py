@@ -31,7 +31,7 @@ class EquipmentManager:
             st.session_state.original_data_hash = {}
 
     def render(self):
-        st.title("📝 Equipment Manager")
+        st.title("📝 VDRS 360")
         
         steps_completed = 0
         if st.session_state.get('fixed_fields_set'): steps_completed += 1
