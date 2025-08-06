@@ -205,12 +205,12 @@ class SearchEquipment:
             return {}
 
     def _apply_dynamic_specification_labels(self, df: pd.DataFrame, equipment_type: str = None) -> pd.DataFrame:
-        """Apply dynamic specification labels and remove unlabeled specifications"""
+        """Apply dynamic specification labels - simplified for consistency"""
         try:
             if df.empty:
                 return df
             
-            logger.info(f"Applying dynamic specification labels and filtering for: {equipment_type or 'mixed equipment'}")
+            logger.info(f"Applying dynamic specification labels for: {equipment_type or 'mixed equipment'}")
             
             # If specific equipment type provided, use its mapping
             if equipment_type:
@@ -219,82 +219,29 @@ class SearchEquipment:
                 
                 if spec_labels:
                     labeled_df = df.copy()
-                    column_mapping = {}
-                    columns_to_remove = []
-                    used_labels = set()
                     
-                    # Process all specification columns
-                    for spec_num in range(1, 51):  # 1 to 50 based on your data
-                        spec_col = f'Specifications{spec_num}'
+                    # Apply mapping directly - let pandas handle any issues
+                    try:
+                        labeled_df = labeled_df.rename(columns=spec_labels)
+                        logger.info(f"Successfully applied {len(spec_labels)} specification labels for {equipment_type}")
                         
-                        if spec_col in labeled_df.columns:
-                            if spec_col in spec_labels:
-                                # Has a label - map it (handle duplicates)
-                                clean_label = spec_labels[spec_col]
-                                original_label = clean_label
-                                counter = 1
-                                
-                                # Handle duplicate labels by making them unique
-                                while clean_label in used_labels:
-                                    clean_label = f"{original_label} ({counter})"
-                                    counter += 1
-                                
-                                column_mapping[spec_col] = clean_label
-                                used_labels.add(clean_label)
-                                logger.debug(f"Will map {spec_col} -> {clean_label}")
-                            else:
-                                # No label - mark for removal
-                                columns_to_remove.append(spec_col)
-                                logger.debug(f"Will remove unlabeled {spec_col}")
-                    
-                    logger.info(f"Prepared to map {len(column_mapping)} columns and remove {len(columns_to_remove)} unlabeled specifications")
-                    
-                    # Apply the mapping
-                    if column_mapping:
-                        labeled_df = labeled_df.rename(columns=column_mapping)
-                        logger.info(f"Successfully applied {len(column_mapping)} specification labels")
-                    
-                    # Remove unlabeled specification columns
-                    if columns_to_remove:
-                        labeled_df = labeled_df.drop(columns=columns_to_remove)
-                        logger.info(f"Removed {len(columns_to_remove)} unlabeled specification columns")
-                    
-                    # Final safety check for duplicates
-                    final_columns = list(labeled_df.columns)
-                    if len(final_columns) != len(set(final_columns)):
-                        duplicate_cols = [col for col in final_columns if final_columns.count(col) > 1]
-                        logger.error(f"DUPLICATE COLUMNS STILL EXIST: {duplicate_cols}")
+                        # Remove any remaining unlabeled specification columns
+                        remaining_spec_cols = [col for col in labeled_df.columns if col.startswith('Specifications')]
+                        if remaining_spec_cols:
+                            labeled_df = labeled_df.drop(columns=remaining_spec_cols)
+                            logger.info(f"Removed {len(remaining_spec_cols)} remaining unlabeled specification columns")
                         
-                        # Try to fix duplicates by making them unique
-                        final_mapping = {}
-                        seen_names = set()
+                        return labeled_df
                         
-                        for col in final_columns:
-                            if col in seen_names:
-                                # This is a duplicate, make it unique
-                                original_name = col
-                                counter = 1
-                                new_name = f"{original_name} ({counter})"
-                                while new_name in seen_names:
-                                    counter += 1
-                                    new_name = f"{original_name} ({counter})"
-                                final_mapping[col] = new_name
-                                seen_names.add(new_name)
-                            else:
-                                seen_names.add(col)
-                        
-                        if final_mapping:
-                            labeled_df = labeled_df.rename(columns=final_mapping)
-                            logger.info(f"Fixed {len(final_mapping)} duplicate column names")
-                    
-                    return labeled_df
+                    except Exception as mapping_error:
+                        logger.error(f"Error applying mapping for {equipment_type}: {str(mapping_error)}")
+                        # If mapping fails, just remove unlabeled specifications
+                        return self._remove_all_specification_columns(df)
                 else:
                     logger.warning(f"No specification labels retrieved from database for {equipment_type}")
-                    # Remove all specification columns since none are labeled
                     return self._remove_all_specification_columns(df)
             
-            # If no mapping available, remove all specification columns
-            logger.info("No dynamic specification mapping available, removing all specification columns")
+            # If no equipment type, remove all specification columns
             return self._remove_all_specification_columns(df)
             
         except Exception as e:
@@ -831,52 +778,72 @@ class SearchEquipment:
                         
                         st.info(f"📋 **Total mappings found:** {len(mapping)} out of 50 possible specifications")
                     
-                    # Apply dynamic labels from database (this also removes unlabeled specs)
+                    # Apply dynamic labels from database
                     labeled_data = self._apply_dynamic_specification_labels(test_data, 'BALER')
                     
-                    st.markdown("**After Applying Database Labels (Unlabeled Specifications Removed):**")
-                    # Show the same basic columns plus the first few mapped specifications
-                    basic_cols = ['SerialNumber', 'EquipmentType', 'CustomerName', 'Manufacturer']
+                    st.markdown("**After Applying Database Labels:**")
+                    
+                    # Show exactly what columns we have now
+                    all_columns = list(labeled_data.columns)
+                    basic_cols = ['CustomerID', 'CustomerName', 'SerialNumber', 'EquipmentType', 'Manufacturer']
                     available_basic_cols = [col for col in basic_cols if col in labeled_data.columns]
                     
-                    # Get labeled specification columns (those that don't start with 'Specifications')
-                    labeled_spec_cols = [col for col in labeled_data.columns 
-                                       if not col.startswith('Specifications') 
-                                       and col not in basic_cols + ['CustomerID', 'CustomerLocation', 'ActiveStatus']]
+                    # Get specification columns (both labeled and unlabeled)
+                    spec_cols = []
+                    for col in labeled_data.columns:
+                        if col.startswith('Specifications'):
+                            spec_cols.append(f"{col} (unlabeled)")
+                        elif col not in basic_cols + ['CustomerLocation', 'ActiveStatus', 'Model']:
+                            spec_cols.append(f"{col} (labeled)")
                     
-                    # Show basic columns plus first 5 labeled specifications
-                    display_columns = available_basic_cols + labeled_spec_cols[:5]
-                    st.dataframe(labeled_data[display_columns], use_container_width=True)
+                    # Show first 10 columns
+                    display_columns = available_basic_cols + [col.split(' (')[0] for col in spec_cols[:10]]
+                    available_display_cols = [col for col in display_columns if col in labeled_data.columns]
                     
-                    # Show what changed
-                    original_spec_cols = [col for col in test_data.columns if col.startswith('Specifications')]
-                    remaining_spec_cols = [col for col in labeled_data.columns if col.startswith('Specifications')]
-                    mapped_spec_cols = len(labeled_spec_cols)
-                    removed_spec_cols = len(original_spec_cols) - len(remaining_spec_cols)
+                    if available_display_cols:
+                        st.dataframe(labeled_data[available_display_cols], use_container_width=True)
                     
+                    # Show detailed column analysis
+                    st.markdown("**Column Structure Analysis:**")
                     col1, col2, col3 = st.columns(3)
-                    with col1:
-                        st.metric("Original Specifications", len(original_spec_cols))
-                    with col2:
-                        st.metric("Mapped to Labels", mapped_spec_cols)
-                    with col3:
-                        st.metric("Unlabeled Removed", removed_spec_cols)
                     
-                    if mapped_spec_cols > 0:
-                        st.success(f"✅ Successfully mapped {mapped_spec_cols} specifications and removed {removed_spec_cols} unlabeled ones")
-                        
-                        # Show sample of the mapped specifications
-                        if labeled_spec_cols:
-                            st.write("**Sample of mapped specifications:**")
-                            for spec_col in labeled_spec_cols[:5]:
-                                st.write(f"• {spec_col}")
+                    with col1:
+                        basic_count = len([col for col in labeled_data.columns if col in basic_cols])
+                        st.metric("Basic Columns", basic_count)
+                    
+                    with col2:
+                        labeled_spec_count = len([col for col in labeled_data.columns 
+                                                if not col.startswith('Specifications') 
+                                                and col not in basic_cols + ['CustomerLocation', 'ActiveStatus', 'Model']])
+                        st.metric("Labeled Specifications", labeled_spec_count)
+                    
+                    with col3:
+                        unlabeled_spec_count = len([col for col in labeled_data.columns if col.startswith('Specifications')])
+                        st.metric("Unlabeled Specifications", unlabeled_spec_count)
+                    
+                    # Show what the interface will look like
+                    ordered_columns = self._get_ordered_columns_for_editing(labeled_data)
+                    st.markdown("**Final Interface Column Order:**")
+                    st.write(", ".join(ordered_columns[:15]) + ("..." if len(ordered_columns) > 15 else ""))
+                    
+                    if labeled_spec_count > 0:
+                        st.success(f"✅ **Interface Consistency:** Database mapping applied successfully")
                     else:
-                        st.warning("⚠️ No specification columns were mapped")
+                        st.warning("⚠️ **Interface Mismatch:** No specification labels were applied")
                         
-                        if not mapping:
-                            st.error("❌ No mapping retrieved from database for BALER")
+                        # Debug why mapping wasn't applied
+                        if mapping:
+                            st.write("**Debug: Mapping exists but not applied**")
+                            st.write(f"- Database mapping size: {len(mapping)}")
+                            st.write(f"- Sample mapping: {dict(list(mapping.items())[:3])}")
+                            
+                            # Check if column names match
+                            available_spec_cols = [col for col in test_data.columns if col.startswith('Specifications')]
+                            matching_cols = [col for col in available_spec_cols if col in mapping]
+                            st.write(f"- Available spec columns in data: {len(available_spec_cols)}")
+                            st.write(f"- Matching columns for mapping: {len(matching_cols)}")
                         else:
-                            st.write("Mapping exists but columns may not match. Check database vs TestDB column names.")
+                            st.error("❌ No mapping retrieved from database for BALER")
                 else:
                     st.warning("No BALER equipment found in database")
                     
@@ -1001,31 +968,35 @@ class SearchEquipment:
             return pd.DataFrame()
 
     def _apply_dynamic_specification_labels_to_mixed_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Apply dynamic specification labels to mixed equipment data - safe approach"""
+        """Apply dynamic specification labels to mixed equipment data - always try to apply best mapping"""
         try:
             if df.empty or 'EquipmentType' not in df.columns:
-                return df
+                return self._remove_all_specification_columns(df)
             
-            logger.info("Checking if data is suitable for dynamic specification labeling")
+            logger.info("Applying dynamic specification labeling to equipment data")
             
             # Check if data contains only one equipment type
             unique_types = df['EquipmentType'].dropna().unique()
             
             if len(unique_types) == 1:
-                # Single equipment type - safe to apply specific mapping
+                # Single equipment type - apply specific mapping
                 equipment_type = unique_types[0]
                 logger.info(f"Single equipment type detected: {equipment_type}, applying specific mapping")
                 return self._apply_dynamic_specification_labels(df, equipment_type)
             
             elif len(unique_types) > 1:
-                # Multiple equipment types - don't apply mapping to avoid conflicts
-                logger.info(f"Mixed equipment types detected: {list(unique_types)}, keeping original column names to avoid duplicates")
-                st.info(f"📊 **Mixed Equipment Types Detected:** {', '.join(unique_types[:5])}{'...' if len(unique_types) > 5 else ''}")
-                st.caption("💡 Specification columns will show as 'Specifications1', 'Specifications2', etc. to avoid conflicts between different equipment types")
-                return df
+                # Multiple equipment types - apply mapping from most common type
+                type_counts = df['EquipmentType'].value_counts()
+                primary_type = type_counts.index[0]
+                
+                logger.info(f"Mixed equipment types detected: {list(unique_types)}, using {primary_type} as primary for mapping")
+                st.info(f"📊 **Mixed Equipment Types:** Using {primary_type} specification mapping for {', '.join(unique_types[:3])}{'...' if len(unique_types) > 3 else ''}")
+                
+                # Apply the primary type's mapping to all data
+                return self._apply_dynamic_specification_labels(df, primary_type)
             
-            # No equipment type data
-            return df
+            # No equipment type data - remove all specification columns
+            return self._remove_all_specification_columns(df)
             
         except Exception as e:
             logger.error(f"Error applying dynamic labels to mixed data: {str(e)}")
@@ -1033,53 +1004,69 @@ class SearchEquipment:
     
     # ========== EDITABLE TABLE HELPER METHODS ==========
     def _get_ordered_columns_for_editing(self, df: pd.DataFrame) -> list:
-        """Get columns in logical order for editing interface"""
+        """Get columns in logical order for editing interface - matching SQL table structure"""
         try:
-            # Define the preferred column order for editing
+            # Define the preferred column order matching your SQL table structure
             priority_columns = [
-                'SerialNumber', 'EquipmentType', 'CustomerName', 'Manufacturer', 
-                'Model', 'ActiveStatus', 'ParentProjectID', 'ManufacturerProjectID'
+                'CustomerID', 'CustomerName', 'CustomerLocation', 'ActiveStatus', 
+                'SortSystemPosition', 'SerialNumber', 'OtherOrPreviousPosition', 
+                'CustomerPositionNo', 'YearManufactured', 'SalesDateWarrantyStartDate', 
+                'InstallDate', 'Manufacturer', 'ManufacturerProjectID', 'ParentProjectID', 
+                'EquipmentType', 'FunctionalType', 'FunctionalPosition', 
+                'ManufacturerModelDescription', 'Model'
             ]
             
-            # Get specification columns (both labeled and unlabeled)
+            # Get specification columns (labeled ones) and system columns
             spec_columns = []
-            other_columns = []
+            system_columns = []
             
             for col in df.columns:
                 if col in priority_columns:
-                    continue  # Will be added first
+                    continue  # Will be added in order
                 elif col.startswith('Specifications'):
-                    # This is an unlabeled specification - should have been removed
-                    continue  # Skip unlabeled specifications
-                elif col not in [
-                    'CustomerID', 'CustomerLocation', 'YearManufactured',
-                    'InstallDate', 'SalesDateWarrantyStartDate', 'FunctionalType',
-                    'FunctionalPosition', 'ManufacturerModelDescription', 'Notes',
-                    'EquipmentKey', 'RecordHistory', 'RowCounter', 'MachineInfoID',
-                    'UploadsPendingID', 'HashedSerialNumber', 'SortSystemPosition',
-                    'OtherOrPreviousPosition', 'CustomerPositionNo'
+                    # This should have been removed if unlabeled, but include if still present
+                    spec_columns.append(col)
+                elif col in [
+                    'Notes', 'EquipmentKey', 'RecordHistory', 'RowCounter', 
+                    'MachineInfoID', 'UploadsPendingID', 'HashedSerialNumber'
                 ]:
+                    # System columns go at the end
+                    system_columns.append(col)
+                else:
                     # This is likely a labeled specification column
                     spec_columns.append(col)
-                else:
-                    # Other system columns
-                    other_columns.append(col)
             
-            # Build final column order
+            # Build final column order matching SQL table structure
             ordered_columns = []
             
-            # Add priority columns first (if they exist)
+            # Add priority columns first (matching SQL table order)
             for col in priority_columns:
                 if col in df.columns:
                     ordered_columns.append(col)
             
-            # Add labeled specification columns next
-            ordered_columns.extend(sorted(spec_columns))
+            # Add specification columns (both labeled and unlabeled) in order
+            # Sort specification columns by number if they're still SpecificationsX format
+            spec_columns_sorted = []
+            other_spec_columns = []
             
-            # Add remaining system columns last
-            ordered_columns.extend(sorted(other_columns))
+            for col in spec_columns:
+                if col.startswith('Specifications') and col[13:].isdigit():
+                    spec_columns_sorted.append((int(col[13:]), col))
+                else:
+                    other_spec_columns.append(col)
             
-            logger.info(f"Ordered {len(ordered_columns)} columns for editing interface")
+            # Add numbered specifications in order
+            spec_columns_sorted.sort()
+            for _, col in spec_columns_sorted:
+                ordered_columns.append(col)
+            
+            # Add other specification columns (labeled ones)
+            ordered_columns.extend(sorted(other_spec_columns))
+            
+            # Add system columns at the end
+            ordered_columns.extend(sorted(system_columns))
+            
+            logger.info(f"Ordered {len(ordered_columns)} columns for editing interface matching SQL structure")
             return ordered_columns
             
         except Exception as e:
@@ -1323,32 +1310,44 @@ class SearchEquipment:
             st.metric("Specification Coverage", f"{spec_coverage:.1f}%")
 
     def _display_specification_coverage(self, df: pd.DataFrame):
-        """Display specification coverage statistics for the dataset"""
+        """Display specification coverage statistics showing what mapping was applied"""
         try:
             if df.empty:
                 return
             
-            # Count non-null specifications (1-50 based on your data)
-            spec_stats = []
-            for spec_num in range(1, 51):  # 1 to 50 based on your data
-                spec_col = f'Specifications{spec_num}'
-                if spec_col in df.columns:
-                    non_null_count = df[spec_col].notna().sum()
-                    if non_null_count > 0:
-                        coverage_pct = (non_null_count / len(df)) * 100
-                        spec_stats.append({
-                            'spec_num': spec_num,
-                            'records_with_data': non_null_count,
-                            'coverage_pct': coverage_pct
-                        })
+            # Count labeled specification columns (those that were successfully mapped)
+            labeled_spec_cols = []
+            unlabeled_spec_cols = []
             
-            if spec_stats:
-                # Show summary statistics
-                total_specs_with_data = len(spec_stats)
-                avg_coverage = sum(s['coverage_pct'] for s in spec_stats) / len(spec_stats)
+            for col in df.columns:
+                if col.startswith('Specifications'):
+                    unlabeled_spec_cols.append(col)
+                elif col not in [
+                    'CustomerID', 'CustomerName', 'CustomerLocation', 'ActiveStatus', 
+                    'SortSystemPosition', 'SerialNumber', 'OtherOrPreviousPosition', 
+                    'CustomerPositionNo', 'YearManufactured', 'SalesDateWarrantyStartDate', 
+                    'InstallDate', 'Manufacturer', 'ManufacturerProjectID', 'ParentProjectID', 
+                    'EquipmentType', 'FunctionalType', 'FunctionalPosition', 
+                    'ManufacturerModelDescription', 'Model', 'Notes', 'EquipmentKey', 
+                    'RecordHistory', 'RowCounter', 'MachineInfoID', 'UploadsPendingID', 
+                    'HashedSerialNumber'
+                ]:
+                    # This is likely a labeled specification column
+                    labeled_spec_cols.append(col)
+            
+            # Show what mapping was applied
+            if labeled_spec_cols:
+                specs_with_data = sum(1 for col in labeled_spec_cols if df[col].notna().sum() > 0)
+                st.success(f"✅ **Database Mapping Applied:** {len(labeled_spec_cols)} specifications labeled, {specs_with_data} contain data")
                 
-                st.info(f"📋 **Specification Coverage:** {total_specs_with_data}/50 specifications contain data (avg {avg_coverage:.1f}% coverage)")
-                
+                # Show sample of mapped specifications
+                if len(labeled_spec_cols) > 0:
+                    sample_specs = labeled_spec_cols[:5]
+                    st.caption(f"📋 **Sample Labels:** {', '.join(sample_specs)}")
+            
+            elif unlabeled_spec_cols:
+                st.info(f"📊 **Generic Labels:** {len(unlabeled_spec_cols)} specifications showing as 'Specifications1, 2, 3...' (no database mapping found)")
+            
         except Exception as e:
             logger.error(f"Error displaying specification coverage: {str(e)}")
 
