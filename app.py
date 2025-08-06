@@ -32,7 +32,7 @@ def render_sidebar():
     """Render clean navigation sidebar"""
     with st.sidebar:
         # ========== SYSTEM HEADER ==========
-        st.markdown("# ⚙️ Van Dyk Equipment")
+        st.markdown("# ⚙️ VDRS 360 - Equipment")
         st.markdown("**Management System**")
         st.markdown("---")
         
